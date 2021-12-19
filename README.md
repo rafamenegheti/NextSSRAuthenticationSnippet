@@ -1,34 +1,49 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This was developed in [Rocketset](https://www.rocketseat.com.br/) classes
 
 ## Getting Started
 
-First, run the development server:
+With this code snippet you can implement a quite complete authentication method to your NextJS project
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+I will try to pass throw all the primary files so i can give a general notion on how you can implement it
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+It is important to make it clear that it is assuming that your backend is serving you with endpoints with these functions:
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+- `/api/me` - giving you the an array with the user permissions and an arry with the user roles.
+- `/api/sessions` - reciving the credentials and returning you: token, refreshToken, permissions and roles
+  
+  
+  ## Main Files
+  
+- `Configuring Axios`
+We are using Axios for our requests, so first of all it's important to configure it
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+In the services/api.ts we are exporting a function with the name `setupAPIClient`, it receives `ctx` as parameter in cases when this function is called by the server side, we are using [Nookies](https://www.npmjs.com/package/nookies) to deal with the cookies, so in the top of the function we retrive the cookies with it
+```typescript 
+  let cookies = parseCookies(ctx); 
+  ```
+  
+  after it we create our axios session passing the token (even if it do not exist yet) to the headers:
+  ```typescript 
+    const api = axios.create({
+    baseURL: "http://localhost:3333",
+    headers: {
+      Authorization: `Bear ${cookies["nextauth.token"]}`,
+    },
+  });
+  ```
+  now we are going to use Axios interceptors so we can get errors before javascript try to handle then ([see more](https://axios-http.com/docs/interceptors)), this is important cause
+  if the token expires, we'll have to refresh it, and the refresh can take some time and in the meantime the requests will continue to happen with the 
+  invalid token causing problems, so the rest of this code will basically wait for a request thar returns 401(not authorized)
+  ```typescript
+  if (error.response.status === 401) {
+        if (error.response.data?.code === "token.expired"){
+ }
+ ```
+        
+ realize that it is doing a verification if `error.response.data.code === "token.expired"`
+ the reason for this is that the api return the error type, in your case you may do it diferent
+ 
+ this function that set axios is being imported in `services/apliClient` and being exported as a constant `api
+ 
+ 
+ 
